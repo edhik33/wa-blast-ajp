@@ -1,0 +1,34 @@
+# Dependencies
+frontend/node_modules/
+
+# Build output
+frontend/dist/
+backend/build/
+*.exe
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# Binary / compiled
+wa-blast
+wa-assistant
+server
+
+# DB files
+*.db
+*.sqlite
