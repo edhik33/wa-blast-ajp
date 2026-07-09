@@ -35,25 +35,32 @@ func GenerateKnowledge(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Text is required"})
 		return
 	}
+	// Auto-scale count berdasarkan panjang teks (min 5, max 20)
 	if req.Count <= 0 {
-		req.Count = 10
+		words := len(strings.Fields(req.Text))
+		req.Count = 5
+		if words > 100 {
+			req.Count = 10
+		}
+		if words > 250 {
+			req.Count = 15
+		}
 	}
 	if req.Count > 20 {
 		req.Count = 20
 	}
 
-	// Alat AI generatif ini memakai token sungguhan — kenakan ke kuota AI bulanan
-	// tenant agar tidak jadi kebocoran biaya di luar hitungan paket.
 	bizCtx := bizPrompts[req.BizType]
 	if bizCtx == "" {
-		bizCtx = "pelanggan yang ingin tahu informasi penting tentang produk/layanan"
+		bizCtx = "pelanggan atau pengunjung yang ingin tahu informasi penting"
 	}
 
 	prompt := `Buatkan ` + intToStr(req.Count) + ` pasangan Tanya-Jawab FAQ dalam format JSON dari teks berikut.
-Fokus pada pertanyaan yang sering ditanyakan ` + bizCtx + `.
-Gunakan bahasa Indonesia yang natural dan ramah, seolah kamu customer service yang membantu.
+PENTING: EKSTRAK SEMUA detail spesifik dari teks sumber — nama, alamat, lokasi, syarat, kategori, proses, harga, batasan, pengecualian. 
+JANGAN mengarang informasi yang tidak ada di teks sumber. Gunakan bahasa Indonesia natural dan ramah.
+Setiap jawaban HARUS mengandung detail konkret dari teks (bukan jawaban generik).
 Format output HARUS JSON array persis seperti ini:
-[{"question": "pertanyaan", "answer": "jawaban", "tags": "kata,kunci"}]
+[{"question": "pertanyaan", "answer": "jawaban lengkap dengan detail dari teks", "tags": "kata,kunci"}]
 
 Teks sumber:
 ` + req.Text
@@ -65,10 +72,10 @@ Teks sumber:
 	resp, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
 		Model: config.Env("OPENAI_MODEL", "deepseek-v4-pro"),
 		Messages: []openai.ChatCompletionMessage{
-			{Role: openai.ChatMessageRoleSystem, Content: "Kamu adalah AI yang jago membuat FAQ knowledge base untuk bisnis. Pahami konteks bisnisnya, buat pertanyaan yang realistis dari sudut pandang pelanggan. Output HANYA JSON array."},
+			{Role: openai.ChatMessageRoleSystem, Content: "Kamu adalah AI spesialis knowledge base. Tugasmu: baca teks sumber dengan teliti, ekstrak SEMUA fakta dan detail spesifik, lalu buat pasangan FAQ yang kaya informasi. JANGAN membuat jawaban generik tanpa detail. Setiap jawaban wajib mengandung fakta konkret dari teks sumber. Output HANYA JSON array."},
 			{Role: openai.ChatMessageRoleUser, Content: prompt},
 		},
-		MaxTokens: 1000,
+		MaxTokens: 4096,
 	})
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
