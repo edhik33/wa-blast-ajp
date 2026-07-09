@@ -158,7 +158,7 @@ func runWebTraining(agentID, jobID uint, pageIDs []uint, maxChars int) {
 		if p.Status == "trained" || strings.TrimSpace(p.Content) == "" {
 			continue
 		}
-		if used >= int64(maxChars) {
+		if maxChars > 0 && used >= int64(maxChars) {
 			setPageStatus(p.ID, "failed", "kuota knowledge penuh")
 			continue
 		}
