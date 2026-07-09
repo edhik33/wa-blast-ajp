@@ -183,7 +183,7 @@ func runWebTraining(agentID, jobID uint, pageIDs []uint, maxChars int) {
 			if ans == "" {
 				continue
 			}
-			if used+int64(len([]rune(ans))) > int64(maxChars) {
+			if maxChars > 0 && used+int64(len([]rune(ans))) > int64(maxChars) {
 				break // kuota habis
 			}
 			k := models.Knowledge{AgentID: agentID, Question: f.Question, Answer: ans, Tags: "web", Source: "web", SourceURL: p.URL}
